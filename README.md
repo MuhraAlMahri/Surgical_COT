@@ -6,6 +6,8 @@
 
 > **Investigating stage-wise training strategies for medical VQA using Vision-Language Models**
 
+**🗺️ Lost? See the [NAVIGATION_GUIDE.md](NAVIGATION_GUIDE.md) to find everything quickly!**
+
 This repository contains the complete implementation and results of our comparative study on different training approaches for medical Visual Question Answering (VQA), with a focus on surgical and endoscopic image analysis.
 
 ## 🏆 Key Results
