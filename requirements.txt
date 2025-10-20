@@ -1,0 +1,47 @@
+# Surgical COT - Requirements
+# Medical Visual Question Answering with Stage-Wise Training
+
+# Core Deep Learning
+torch>=2.0.0
+torchvision>=0.15.0
+transformers>=4.37.0
+accelerate>=0.26.0
+
+# Model Fine-tuning
+peft>=0.8.0
+bitsandbytes>=0.41.0
+
+# Qwen-VL Specific
+qwen-vl-utils>=0.0.2
+
+# Image Processing
+Pillow>=10.0.0
+opencv-python>=4.8.0
+
+# Data Processing
+pandas>=2.0.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+
+# Utilities
+tqdm>=4.65.0
+wandb>=0.15.0  # Optional: for experiment tracking
+tensorboard>=2.13.0  # Optional: for visualization
+
+# Evaluation
+evaluate>=0.4.0
+rouge-score>=0.1.2
+nltk>=3.8.0
+
+# Job Management (for SLURM clusters)
+submitit>=1.4.5  # Optional: for job submission
+
+# Development
+black>=23.0.0  # Code formatting
+isort>=5.12.0  # Import sorting
+flake8>=6.0.0  # Linting
+pytest>=7.4.0  # Testing
+
+# Documentation
+sphinx>=7.0.0  # Optional: for documentation generation
+sphinx-rtd-theme>=1.3.0  # Optional: ReadTheDocs theme
