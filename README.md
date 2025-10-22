@@ -425,6 +425,7 @@ Surgical_COT/
 - **[Quick Reference Card](docs/QUICK_REFERENCE_CARD.md)** - One-page summary of all experiments
 - **[Verified Results Comparison](docs/VERIFIED_RESULTS_COMPARISON.md)** - Detailed analysis of CXRTrek vs Curriculum
 - **[Advisor Summary](docs/CURRICULUM_VS_CXRTREK_ADVISOR_SUMMARY.md)** - High-level summary for advisors
+- **[Train/Test Split Methodology](docs/TRAIN_TEST_SPLIT_METHODOLOGY.md)** - How the data was split for experiments
 
 ---
 

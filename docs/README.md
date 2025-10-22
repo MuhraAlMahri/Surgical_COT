@@ -18,6 +18,7 @@ Complete documentation for the Surgical Chain-of-Thought (COT) project.
 ### Technical Documentation
 - **[Architecture Guide](../curriculum_learning/ARCHITECTURE.md)** - System architecture and design
 - **[Hyperparameters](../curriculum_learning/HYPERPARAMETERS.md)** - Complete hyperparameter documentation
+- **[Train/Test Split Methodology](TRAIN_TEST_SPLIT_METHODOLOGY.md)** - How the data was split for experiments
 - **[Bugfix Log](../curriculum_learning/BUGFIX_LOG.md)** - Technical fixes applied during development
 
 ### Experiment-Specific

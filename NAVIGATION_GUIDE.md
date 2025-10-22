@@ -138,6 +138,7 @@ All experiments are in: **`experiments/cxrtrek_curriculum_learning/`**
 ### "I want to understand the methodology"
 → [`README.md`](README.md) - Overview
 → [`docs/VERIFIED_RESULTS_COMPARISON.md`](docs/VERIFIED_RESULTS_COMPARISON.md) - Detailed analysis
+→ [`docs/TRAIN_TEST_SPLIT_METHODOLOGY.md`](docs/TRAIN_TEST_SPLIT_METHODOLOGY.md) - Train/test split details
 
 ### "I want to cite this work"
 → [`README.md`](README.md) - Citation section at bottom
@@ -187,4 +188,11 @@ All experiments are in: **`experiments/cxrtrek_curriculum_learning/`**
 
 **Last Updated**: October 20, 2025  
 **Repository**: https://github.com/MuhraAlMahri/Surgical_COT
+
+
+
+
+
+
+
 
