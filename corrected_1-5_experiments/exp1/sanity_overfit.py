@@ -100,6 +100,12 @@ def main():
     print(f"Expected: Loss should drop below 2.0 within 200 steps")
     print(f"{'='*80}\n")
     
+    # Clear CUDA cache before loading model
+    import torch
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        print(f"GPU memory before loading: {torch.cuda.memory_allocated()/1024**3:.2f} GB")
+    
     # Load model
     model = AutoModelForVision2Seq.from_pretrained(model_name, trust_remote_code=True)
     
@@ -118,6 +124,9 @@ def main():
     )
     model = get_peft_model(model, lora_cfg)
     
+    if torch.cuda.is_available():
+        print(f"GPU memory after LoRA: {torch.cuda.memory_allocated()/1024**3:.2f} GB")
+    
     # Create datasets
     train_ds = VQASFTDataset(str(tiny_train), cfg["data"]["image_root"], model_name, cfg["train"]["max_seq_len"])
     val_ds = VQASFTDataset(str(tiny_val), cfg["data"]["image_root"], model_name, cfg["train"]["max_seq_len"])
@@ -125,9 +134,9 @@ def main():
     # Training args optimized for overfitting
     args = TrainingArguments(
         output_dir=str(script_dir / "outputs/sanity_overfit"),
-        per_device_train_batch_size=4,
-        per_device_eval_batch_size=4,
-        gradient_accumulation_steps=1,
+        per_device_train_batch_size=1,  # Reduced for memory
+        per_device_eval_batch_size=1,
+        gradient_accumulation_steps=4,  # Simulate batch size 4
         learning_rate=1e-3,  # Higher LR for faster overfitting
         weight_decay=0.0,  # No regularization
         max_steps=200,

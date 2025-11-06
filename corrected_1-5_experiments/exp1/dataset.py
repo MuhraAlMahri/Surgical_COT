@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 from PIL import Image
 from pathlib import Path
 from transformers import AutoProcessor
-from templates import prompt_block
+from templates import build_conversation
 
 
 class VQASFTDataset(Dataset):
@@ -33,18 +33,25 @@ class VQASFTDataset(Dataset):
         img_path = self.image_root / img_file
         img = Image.open(str(img_path).replace("//", "/")).convert("RGB")
         
-        # Build prompt WITH answer (wrapped in sentinels)
-        prompt_with_answer = prompt_block(
+        # Build LLaVA-style conversation with sentinels
+        conversation = build_conversation(
             ex["question_type"],
             ex["question"],
             ex.get("answer_candidates"),
-            answer=ex["answer"],  # Include ground truth
+            answer=ex["answer"],  # Include ground truth with <ANS> sentinels
             for_training=True
         )
         
-        # Process ONCE with image and full text (including answer)
+        # Apply chat template (renders system/user/assistant turns)
+        full_text = self.processor.apply_chat_template(
+            conversation,
+            tokenize=False,
+            add_generation_prompt=False  # We already have assistant response
+        )
+        
+        # Single-pass processing with image and full text (including answer)
         enc = self.processor(
-            text=[prompt_with_answer],
+            text=[full_text],
             images=[img],
             return_tensors="pt",
             padding="max_length",
@@ -58,11 +65,9 @@ class VQASFTDataset(Dataset):
         pixel_values = enc.get("pixel_values", [None])[0]
         image_grid_thw = enc.get("image_grid_thw")
         
-        # Sentinel-based label masking
-        # Find <ANS> and </ANS> token positions
-        tok = self.processor.tokenizer
-        
+        # SENTINEL-BASED LABEL MASKING
         # Tokenize sentinels to find their IDs
+        tok = self.processor.tokenizer
         ans_start_tokens = tok("<ANS>", add_special_tokens=False)["input_ids"]
         ans_end_tokens = tok("</ANS>", add_special_tokens=False)["input_ids"]
         
@@ -89,14 +94,15 @@ class VQASFTDataset(Dataset):
                     break
         
         # Apply masking: only supervise answer tokens (between sentinels)
+        # Set labels=-100 except for tokens strictly inside the answer span
         if ans_start_idx and ans_end_idx and ans_start_idx < ans_end_idx:
-            # Unmask answer span
+            # Unmask answer span (between sentinels, not including sentinels themselves)
             labels[ans_start_idx:ans_end_idx] = input_ids[ans_start_idx:ans_end_idx]
-        else:
-            # Debugging: print what went wrong
-            print(f"WARNING: Could not find answer sentinels in sample {i}")
-            print(f"  Decoded text: {tok.decode(input_ids, skip_special_tokens=False)[:200]}...")
-            print(f"  ans_start_idx: {ans_start_idx}, ans_end_idx: {ans_end_idx}")
+            
+            # Also supervise EOS if it's right after </ANS>
+            eos_idx = ans_end_idx + len(ans_end_tokens)
+            if eos_idx < len(input_ids_list) and input_ids_list[eos_idx] == tok.eos_token_id:
+                labels[eos_idx] = input_ids[eos_idx]
         
         # Build result dictionary
         result = {
