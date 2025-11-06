@@ -76,12 +76,14 @@ def main():
     
     enrich_jsonl = enrich_jsonl_local
     
-    train_input = cfg["data"]["train_jsonl"]
-    train_enriched = train_input.replace(".jsonl", ".enriched.jsonl")
+    # Resolve paths relative to exp1 parent (corrected_1-5_experiments)
+    base_dir = script_dir.parent
+    train_input = base_dir / cfg["data"]["train_jsonl"]
+    train_enriched = str(train_input).replace(".jsonl", ".enriched.jsonl")
     
     if not Path(train_enriched).exists():
         print(f"Enriching {train_input}...")
-        enrich_jsonl(train_input, train_enriched)
+        enrich_jsonl(str(train_input), train_enriched)
     
     # Create tiny subset
     tiny_train = script_dir / "outputs/tiny_train.jsonl"

@@ -65,11 +65,13 @@ def main():
     cfg = yaml.safe_load(open(cfg_path))
     model, tok, proc = load_model(cfg, script_dir)
     
-    val_path = cfg["data"]["val_jsonl"]
+    # Resolve val_path relative to base directory
+    base_dir = script_dir.parent
+    val_path = base_dir / cfg["data"]["val_jsonl"]
     img_root = cfg["data"]["image_root"]
     
     preds = []
-    with open(val_path) as f:
+    with open(str(val_path)) as f:
         for line in f:
             ex = json.loads(line)
             img_file = ex.get('image') or ex.get('image_filename')

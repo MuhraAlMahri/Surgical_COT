@@ -53,12 +53,15 @@ def main(cfg_path):
     
     enrich_jsonl = enrich_jsonl_local
     
+    # Resolve paths relative to exp1 parent (corrected_1-5_experiments)
+    base_dir = Path(__file__).parent.parent
+    
     for split in ["train_jsonl", "val_jsonl"]:
-        inp = cfg["data"][split]
-        outp = inp.replace(".jsonl", ".enriched.jsonl")
+        inp = base_dir / cfg["data"][split]
+        outp = str(inp).replace(".jsonl", ".enriched.jsonl")
         if not os.path.exists(outp):
             print(f"Enriching {inp} -> {outp}")
-            enrich_jsonl(inp, outp)
+            enrich_jsonl(str(inp), outp)
         cfg["data"][split] = outp
     
     model = AutoModelForVision2Seq.from_pretrained(model_name, trust_remote_code=True)
