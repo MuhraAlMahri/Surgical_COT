@@ -2,6 +2,7 @@ import json
 import math
 import re
 import yaml
+from pathlib import Path
 from collections import defaultdict
 
 
@@ -18,7 +19,11 @@ def maybe_float(s):
         return None
 
 
-def evaluate(pred_path, cfg_path="corrected_1-5_experiments/exp1/config_exp1.yaml"):
+def evaluate(pred_path, cfg_path=None):
+    if cfg_path is None:
+        # Use path relative to this script
+        script_dir = Path(__file__).parent
+        cfg_path = script_dir / "config_exp1.yaml"
     cfg = yaml.safe_load(open(cfg_path))
     eps_rel = cfg["eval"]["numeric_rel_tol"]
     eps_abs = cfg["eval"]["numeric_abs_tol"]
@@ -51,7 +56,10 @@ def evaluate(pred_path, cfg_path="corrected_1-5_experiments/exp1/config_exp1.yam
 
 
 if __name__ == "__main__":
-    per_type, micro, counts, correct = evaluate("corrected_1-5_experiments/exp1/outputs/predictions.jsonl")
+    from pathlib import Path
+    script_dir = Path(__file__).parent
+    pred_path = script_dir / "outputs/predictions.jsonl"
+    per_type, micro, counts, correct = evaluate(str(pred_path))
     
     print("\n" + "=" * 80)
     print("EVALUATION RESULTS - EXP1")

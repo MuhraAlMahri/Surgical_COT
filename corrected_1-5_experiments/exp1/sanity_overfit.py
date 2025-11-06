@@ -36,7 +36,9 @@ def create_tiny_dataset(jsonl_path, output_path, n_samples=64):
 
 
 def main():
-    cfg_path = "corrected_1-5_experiments/exp1/config_exp1.yaml"
+    # Use absolute path or path relative to script location
+    script_dir = Path(__file__).parent
+    cfg_path = script_dir / "config_exp1.yaml"
     cfg = yaml.safe_load(open(cfg_path))
     model_name = cfg["model_name"]
     
@@ -82,10 +84,10 @@ def main():
         enrich_jsonl(train_input, train_enriched)
     
     # Create tiny subset
-    tiny_train = "corrected_1-5_experiments/exp1/outputs/tiny_train.jsonl"
-    n_train = create_tiny_dataset(train_enriched, tiny_train, n_samples=64)
+    tiny_train = script_dir / "outputs/tiny_train.jsonl"
+    n_train = create_tiny_dataset(train_enriched, str(tiny_train), n_samples=64)
     
-    tiny_val = "corrected_1-5_experiments/exp1/outputs/tiny_val.jsonl"
+    tiny_val = script_dir / "outputs/tiny_val.jsonl"
     n_val = create_tiny_dataset(train_enriched, tiny_val, n_samples=16)
     
     print(f"\n{'='*80}")
@@ -115,12 +117,12 @@ def main():
     model = get_peft_model(model, lora_cfg)
     
     # Create datasets
-    train_ds = VQASFTDataset(tiny_train, cfg["data"]["image_root"], model_name, cfg["train"]["max_seq_len"])
-    val_ds = VQASFTDataset(tiny_val, cfg["data"]["image_root"], model_name, cfg["train"]["max_seq_len"])
+    train_ds = VQASFTDataset(str(tiny_train), cfg["data"]["image_root"], model_name, cfg["train"]["max_seq_len"])
+    val_ds = VQASFTDataset(str(tiny_val), cfg["data"]["image_root"], model_name, cfg["train"]["max_seq_len"])
     
     # Training args optimized for overfitting
     args = TrainingArguments(
-        output_dir="corrected_1-5_experiments/exp1/outputs/sanity_overfit",
+        output_dir=str(script_dir / "outputs/sanity_overfit"),
         per_device_train_batch_size=4,
         per_device_eval_batch_size=4,
         gradient_accumulation_steps=1,

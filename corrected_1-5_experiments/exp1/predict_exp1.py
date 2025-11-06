@@ -14,9 +14,9 @@ from templates import prompt_block
 from constraints import AllowedTokensLogitsProcessor, build_allowed_ids
 
 
-def load_model(cfg):
+def load_model(cfg, script_dir):
     model_name = cfg["model_name"]
-    output_dir = "corrected_1-5_experiments/exp1/outputs"
+    output_dir = script_dir / "outputs"
     
     # Load base model
     model = AutoModelForVision2Seq.from_pretrained(model_name, trust_remote_code=True)
@@ -60,8 +60,10 @@ def generate_answer(model, tok, proc, img_path, question, qtype, candidates=None
 
 
 def main():
-    cfg = yaml.safe_load(open("corrected_1-5_experiments/exp1/config_exp1.yaml"))
-    model, tok, proc = load_model(cfg)
+    script_dir = Path(__file__).parent
+    cfg_path = script_dir / "config_exp1.yaml"
+    cfg = yaml.safe_load(open(cfg_path))
+    model, tok, proc = load_model(cfg, script_dir)
     
     val_path = cfg["data"]["val_jsonl"]
     img_root = cfg["data"]["image_root"]
@@ -85,8 +87,8 @@ def main():
                 "qtype": ex["question_type"]
             })
     
-    output_file = "corrected_1-5_experiments/exp1/outputs/predictions.jsonl"
-    Path(output_file).parent.mkdir(parents=True, exist_ok=True)
+    output_file = script_dir / "outputs/predictions.jsonl"
+    output_file.parent.mkdir(parents=True, exist_ok=True)
     with open(output_file, "w") as f:
         for p in preds:
             f.write(json.dumps(p) + "\n")

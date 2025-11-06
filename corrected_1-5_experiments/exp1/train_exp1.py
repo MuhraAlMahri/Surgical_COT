@@ -90,8 +90,11 @@ def main(cfg_path):
         cfg["train"]["max_seq_len"]
     )
     
+    # Use absolute path for output
+    script_dir = Path(__file__).parent
+    
     args = TrainingArguments(
-        output_dir="corrected_1-5_experiments/exp1/outputs",
+        output_dir=str(script_dir / "outputs"),
         per_device_train_batch_size=cfg["train"]["train_bs"],
         per_device_eval_batch_size=cfg["train"]["eval_bs"],
         gradient_accumulation_steps=cfg["train"]["grad_accum"],
