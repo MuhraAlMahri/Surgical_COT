@@ -29,16 +29,20 @@ class VQASFTDataset(Dataset):
         img_path = self.image_root / img_file
         img = Image.open(str(img_path).replace("//", "/")).convert("RGB")
         prompt = prompt_block(ex["question_type"], ex["question"], ex.get("answer_candidates"))
+        
+        # Use Qwen2-VL processor properly
         enc = self.processor(
-            text=prompt,
-            images=img,
+            text=[prompt],  # List of texts
+            images=[img],   # List of images
             return_tensors="pt",
             padding="max_length",
             max_length=self.max_len,
             truncation=True
         )
+        
         input_ids = enc["input_ids"][0]
-        pixel_values = enc["pixel_values"][0]
+        pixel_values = enc["pixel_values"][0] if "pixel_values" in enc else None
+        image_grid_thw = enc.get("image_grid_thw", None)
         
         # labels: mask ALL prompt tokens with -100, then append answer tokens with labels
         tok = self.processor.tokenizer
@@ -54,16 +58,29 @@ class VQASFTDataset(Dataset):
         attn = attn[:self.max_len]
         labels = labels[:self.max_len]
         
-        return {
+        result = {
             "input_ids": input_ids,
             "attention_mask": attn,
-            "pixel_values": pixel_values,
             "labels": labels
         }
+        
+        # Add vision-related tensors if available
+        if pixel_values is not None:
+            result["pixel_values"] = pixel_values
+        if image_grid_thw is not None:
+            result["image_grid_thw"] = image_grid_thw[0] if len(image_grid_thw.shape) > 1 else image_grid_thw
+        
+        return result
 
 
 def collate(batch):
     keys = batch[0].keys()
-    out = {k: torch.stack([b[k] for b in batch]) for k in keys}
+    out = {}
+    for k in keys:
+        if k == "image_grid_thw":
+            # Stack grid_thw if it exists in all samples
+            out[k] = torch.stack([b[k] for b in batch]) if k in batch[0] else None
+        else:
+            out[k] = torch.stack([b[k] for b in batch])
     return out
 
