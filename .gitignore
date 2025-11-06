@@ -107,3 +107,17 @@ slurm_jobs/
 .Trash-*
 Thumbs.db
 
+# Corrected Experiments - Exclude large directories
+corrected 1-5 experiments/models/
+corrected 1-5 experiments/final_clean_test_output/
+corrected 1-5 experiments/logs/*.out
+corrected 1-5 experiments/logs/*.err
+
+
+
+
+
+
+
+
+

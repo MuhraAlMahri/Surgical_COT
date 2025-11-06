@@ -1,0 +1,11 @@
+{
+  "experiment": "exp3",
+  "by_stage": {},
+  "overall": {
+    "total": 0,
+    "correct": 0,
+    "accuracy": 0.0,
+    "weighted_accuracy": 0.0
+  },
+  "all_predictions": []
+}
