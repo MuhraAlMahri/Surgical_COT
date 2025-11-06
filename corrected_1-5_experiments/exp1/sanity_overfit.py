@@ -135,7 +135,7 @@ def main():
         bf16=cfg["train"]["bf16"],
         logging_steps=10,
         save_steps=50,
-        evaluation_strategy="steps",
+        eval_strategy="steps",
         eval_steps=50,
         gradient_checkpointing=False,
         report_to="none",

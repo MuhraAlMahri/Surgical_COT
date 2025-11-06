@@ -108,7 +108,7 @@ def main(cfg_path):
         bf16=cfg["train"]["bf16"],
         logging_steps=cfg["train"]["logging_steps"],
         save_steps=cfg["train"]["save_steps"],
-        evaluation_strategy="steps",
+        eval_strategy="steps",
         eval_steps=cfg["train"]["save_steps"],
         gradient_checkpointing=cfg["train"]["gradient_checkpointing"],
         report_to="none"
