@@ -27,10 +27,9 @@ train:
   save_steps: 500
 
 data:
-  train_jsonl: corrected 1-5 experiments/exp1/data/train.jsonl
-  val_jsonl: corrected 1-5 experiments/exp1/data/val.jsonl
-  image_root: corrected 1-5 experiments/exp1/images
-  # if you already have your paths, keep them; this is a default
+  train_jsonl: datasets/kvasir_raw_6500_image_level_70_15_15/train.jsonl
+  val_jsonl: datasets/kvasir_raw_6500_image_level_70_15_15/val.jsonl
+  image_root: /l/users/muhra.almahri/Surgical_COT/datasets/Kvasir-VQA/raw/images
 
 eval:
   numeric_rel_tol: 0.05
