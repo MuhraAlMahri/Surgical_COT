@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from transformers import AutoProcessor, AutoModelForVision2Seq, GenerationConfig
 from peft import PeftModel
 from PIL import Image
-from templates import prompt_block
+from templates import prompt_block_inference
 from constraints import AllowedTokensLogitsProcessor, build_allowed_ids
 
 
@@ -32,7 +32,8 @@ def load_model(cfg, script_dir):
 
 
 def generate_answer(model, tok, proc, img_path, question, qtype, candidates=None, max_new=4):
-    prompt = prompt_block(qtype, question, candidates)
+    # Use inference template (no answer, no sentinels)
+    prompt = prompt_block_inference(qtype, question, candidates)
     enc = proc(
         text=prompt,
         images=Image.open(img_path).convert("RGB"),

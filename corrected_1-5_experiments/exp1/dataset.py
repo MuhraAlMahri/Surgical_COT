@@ -13,54 +13,95 @@ class VQASFTDataset(Dataset):
         self.image_root = Path(image_root)
         self.processor = AutoProcessor.from_pretrained(model_name, trust_remote_code=True)
         self.max_len = max_len
+        
+        # Ensure right padding for training
+        if hasattr(self.processor, 'tokenizer'):
+            self.processor.tokenizer.padding_side = 'right'
 
     def __len__(self):
         return len(self.samples)
 
     def __getitem__(self, i):
         ex = self.samples[i]
-        # Handle different image field names
+        
+        # Load image
         img_file = ex.get('image') or ex.get('image_filename') or ex.get('image_id')
         if not img_file:
             raise KeyError(f"No image field found in sample. Available fields: {ex.keys()}")
-        # Add .jpg extension if needed
         if not img_file.endswith(('.jpg', '.jpeg', '.png')):
             img_file = f"{img_file}.jpg"
         img_path = self.image_root / img_file
         img = Image.open(str(img_path).replace("//", "/")).convert("RGB")
-        prompt = prompt_block(ex["question_type"], ex["question"], ex.get("answer_candidates"))
         
-        # Use Qwen2-VL processor properly
+        # Build prompt WITH answer (wrapped in sentinels)
+        prompt_with_answer = prompt_block(
+            ex["question_type"],
+            ex["question"],
+            ex.get("answer_candidates"),
+            answer=ex["answer"],  # Include ground truth
+            for_training=True
+        )
+        
+        # Process ONCE with image and full text (including answer)
         enc = self.processor(
-            text=[prompt],  # List of texts
-            images=[img],   # List of images
+            text=[prompt_with_answer],
+            images=[img],
             return_tensors="pt",
             padding="max_length",
             max_length=self.max_len,
             truncation=True
         )
         
+        # Extract tensors
         input_ids = enc["input_ids"][0]
-        pixel_values = enc["pixel_values"][0] if "pixel_values" in enc else None
-        image_grid_thw = enc.get("image_grid_thw", None)
+        attention_mask = enc["attention_mask"][0]
+        pixel_values = enc.get("pixel_values", [None])[0]
+        image_grid_thw = enc.get("image_grid_thw")
         
-        # labels: mask ALL prompt tokens with -100, then append answer tokens with labels
+        # Sentinel-based label masking
+        # Find <ANS> and </ANS> token positions
         tok = self.processor.tokenizer
-        ans_ids = tok(ex["answer"] + tok.eos_token, add_special_tokens=False)["input_ids"]
-        ans_ids = torch.tensor(ans_ids, dtype=torch.long)
+        
+        # Tokenize sentinels to find their IDs
+        ans_start_tokens = tok("<ANS>", add_special_tokens=False)["input_ids"]
+        ans_end_tokens = tok("</ANS>", add_special_tokens=False)["input_ids"]
+        
+        # Initialize labels: all -100 (masked)
         labels = torch.full_like(input_ids, fill_value=-100)
-        input_ids = torch.cat([input_ids, ans_ids], dim=0)
-        attn = torch.cat([enc["attention_mask"][0], torch.ones_like(ans_ids)], dim=0)
-        labels = torch.cat([labels, ans_ids], dim=0)
         
-        # clip if we exceeded max_len
-        input_ids = input_ids[:self.max_len]
-        attn = attn[:self.max_len]
-        labels = labels[:self.max_len]
+        # Find sentinel positions in input_ids
+        input_ids_list = input_ids.tolist()
         
+        # Search for <ANS> start
+        ans_start_idx = None
+        ans_end_idx = None
+        
+        for idx in range(len(input_ids_list) - len(ans_start_tokens) + 1):
+            if input_ids_list[idx:idx+len(ans_start_tokens)] == ans_start_tokens:
+                ans_start_idx = idx + len(ans_start_tokens)  # Start AFTER <ANS>
+                break
+        
+        # Search for </ANS> end
+        if ans_start_idx:
+            for idx in range(ans_start_idx, len(input_ids_list) - len(ans_end_tokens) + 1):
+                if input_ids_list[idx:idx+len(ans_end_tokens)] == ans_end_tokens:
+                    ans_end_idx = idx  # End BEFORE </ANS>
+                    break
+        
+        # Apply masking: only supervise answer tokens (between sentinels)
+        if ans_start_idx and ans_end_idx and ans_start_idx < ans_end_idx:
+            # Unmask answer span
+            labels[ans_start_idx:ans_end_idx] = input_ids[ans_start_idx:ans_end_idx]
+        else:
+            # Debugging: print what went wrong
+            print(f"WARNING: Could not find answer sentinels in sample {i}")
+            print(f"  Decoded text: {tok.decode(input_ids, skip_special_tokens=False)[:200]}...")
+            print(f"  ans_start_idx: {ans_start_idx}, ans_end_idx: {ans_end_idx}")
+        
+        # Build result dictionary
         result = {
             "input_ids": input_ids,
-            "attention_mask": attn,
+            "attention_mask": attention_mask,
             "labels": labels
         }
         
@@ -68,19 +109,25 @@ class VQASFTDataset(Dataset):
         if pixel_values is not None:
             result["pixel_values"] = pixel_values
         if image_grid_thw is not None:
-            result["image_grid_thw"] = image_grid_thw[0] if len(image_grid_thw.shape) > 1 else image_grid_thw
+            if len(image_grid_thw.shape) > 1:
+                result["image_grid_thw"] = image_grid_thw[0]
+            else:
+                result["image_grid_thw"] = image_grid_thw
         
         return result
 
 
 def collate(batch):
+    """Collate function for batching."""
     keys = batch[0].keys()
     out = {}
+    
     for k in keys:
         if k == "image_grid_thw":
-            # Stack grid_thw if it exists in all samples
-            out[k] = torch.stack([b[k] for b in batch]) if k in batch[0] else None
+            # Stack grid_thw carefully
+            if all(k in b for b in batch):
+                out[k] = torch.stack([b[k] for b in batch])
         else:
             out[k] = torch.stack([b[k] for b in batch])
+    
     return out
-
