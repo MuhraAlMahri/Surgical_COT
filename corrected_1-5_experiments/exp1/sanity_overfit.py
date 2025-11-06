@@ -41,8 +41,38 @@ def main():
     model_name = cfg["model_name"]
     
     # Create tiny datasets
-    sys.path.insert(0, str(Path(__file__).parent / "data"))
-    from preprocess import enrich_jsonl
+    data_dir = Path(__file__).parent / "data"
+    sys.path.insert(0, str(data_dir))
+    
+    # Import schema module
+    import schema
+    import json
+    import re
+    from pathlib import Path as PathlibPath
+    
+    def normalize_answer_local(ans):
+        x = ans.strip().lower()
+        x = re.sub(r"[^\w\.\-\% ]+", "", x)
+        return x
+    
+    def enrich_jsonl_local(in_path, out_path):
+        out = []
+        with open(in_path, "r") as f:
+            for line in f:
+                ex = json.loads(line)
+                q = ex["question"]
+                gt = normalize_answer_local(ex["answer"])
+                qtype = ex.get("question_type") or schema.infer_question_type(q)
+                ex["question_type"] = qtype
+                ex["answer"] = gt
+                ex["answer_candidates"] = schema.build_candidates(qtype, ex)
+                out.append(ex)
+        PathlibPath(out_path).parent.mkdir(parents=True, exist_ok=True)
+        with open(out_path, "w") as f:
+            for ex in out:
+                f.write(json.dumps(ex) + "\n")
+    
+    enrich_jsonl = enrich_jsonl_local
     
     train_input = cfg["data"]["train_jsonl"]
     train_enriched = train_input.replace(".jsonl", ".enriched.jsonl")
