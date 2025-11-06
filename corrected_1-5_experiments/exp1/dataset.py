@@ -19,7 +19,14 @@ class VQASFTDataset(Dataset):
 
     def __getitem__(self, i):
         ex = self.samples[i]
-        img_path = self.image_root / ex['image']
+        # Handle different image field names
+        img_file = ex.get('image') or ex.get('image_filename') or ex.get('image_id')
+        if not img_file:
+            raise KeyError(f"No image field found in sample. Available fields: {ex.keys()}")
+        # Add .jpg extension if needed
+        if not img_file.endswith(('.jpg', '.jpeg', '.png')):
+            img_file = f"{img_file}.jpg"
+        img_path = self.image_root / img_file
         img = Image.open(str(img_path).replace("//", "/")).convert("RGB")
         prompt = prompt_block(ex["question_type"], ex["question"], ex.get("answer_candidates"))
         enc = self.processor(
