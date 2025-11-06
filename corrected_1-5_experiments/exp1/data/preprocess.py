@@ -1,7 +1,12 @@
 import json
 import re
 from pathlib import Path
-from .schema import infer_question_type, build_candidates
+
+# Try relative import first, fall back to direct import
+try:
+    from .schema import infer_question_type, build_candidates
+except ImportError:
+    from schema import infer_question_type, build_candidates
 
 
 def normalize_answer(ans: str) -> str:
